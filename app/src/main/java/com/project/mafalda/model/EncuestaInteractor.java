@@ -187,6 +187,8 @@ public class EncuestaInteractor implements EncuestaInterface, Response.ErrorList
                 @Override
                 public void onResponse(Call<JSONObject> call, retrofit2.Response<JSONObject> response) {
                     if(response.isSuccessful()){
+                        Log.e("LINK",""+response.headers().get("Link"));
+
                         presentador.vista(
                                 encuesta,
                                 imagenes,
@@ -207,11 +209,18 @@ public class EncuestaInteractor implements EncuestaInterface, Response.ErrorList
                 @Override
                 public void onResponse(Call<JSONObject> call, retrofit2.Response<JSONObject> response) {
                     if(response.isSuccessful()){
-                        presentador.vista(
-                                encuesta,
-                                imagenes,
-                                arreglarCadena(response.headers().get("Link").intern())[2]
-                        );
+                        try{
+                            presentador.vista(
+                                    encuesta,
+                                    imagenes,
+                                    arreglarCadena(response.headers().get("Link").intern())[2]
+                            );
+                        }catch (Exception e){
+                            Log.e("ERROR: ","no hay más imagenes");
+                            presentador.vistaError();
+                            presentador.error("no hay imagenes");
+                        }
+
                     }
                 }
 
@@ -274,7 +283,12 @@ public class EncuestaInteractor implements EncuestaInterface, Response.ErrorList
                             }
 
                         }
-                        String cabecera = link.substring(link.length()-1);
+
+                        /**  ¡¡¡¡AQUÍ ESTÁ EL ERROR!!!    **/
+                        String cabecera = link.substring(link.length()-2);
+                        if(cabecera.contains("=")){
+                            cabecera = link.substring(link.length()-1);
+                        }
                         Log.e("CABECERA",cabecera);
                         obtenerLink(encuesta,imagenes,cabecera);
                         //presentador.vista(encuesta,imagenes);
@@ -349,6 +363,7 @@ public class EncuestaInteractor implements EncuestaInterface, Response.ErrorList
             MySingleton.getInstance(context).addToreques(jsonObjectRequest);
         } catch (JSONException e) {
             e.printStackTrace();
+
 
         }
 

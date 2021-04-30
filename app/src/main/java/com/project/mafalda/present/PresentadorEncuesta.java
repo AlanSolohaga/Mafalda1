@@ -38,6 +38,13 @@ public class PresentadorEncuesta implements PresentEncuestaInterface {
     }
 
     @Override
+    public void vistaError() {
+        if(vista!=null){
+            vista.vistaError();
+        }
+    }
+
+    @Override
     public void respuesta(Context context, String nombre, String respuesta,Imagen imagen) {
         if(vista!=null){
             encuesta.respuesta(context,nombre,respuesta,imagen);

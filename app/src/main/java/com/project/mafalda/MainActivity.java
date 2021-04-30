@@ -12,7 +12,9 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
@@ -20,6 +22,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.project.mafalda.interfaz.ComunicaFragments;
 import com.project.mafalda.model.User;
 import com.project.mafalda.utilidades.Utilidades;
@@ -32,30 +36,24 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.TextCodec;
 
-//public class MainActivity extends AppCompatActivity implements ComunicaFragments, GoogleApiClient.OnConnectionFailedListener
-public class MainActivity extends AppCompatActivity implements  ComunicaFragments, GoogleApiClient.OnConnectionFailedListener{
+public class MainActivity extends AppCompatActivity implements  ComunicaFragments{
     FragmentTransaction fragmentTransaction;
     MenuFragment menu;
     private boolean bandera = false;
-    private GoogleApiClient googleApiClient;
+    private GoogleSignInClient googleSignInClient;
+    private FirebaseAuth mAuth;
+
     Utilidades uti = new Utilidades();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        GoogleSignInOptions gso = new GoogleSignInOptions
+                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .build();
-        googleApiClient = new GoogleApiClient.Builder(this)
-                .enableAutoManage(this,this)
-                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-                .build();
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Toast.makeText(this, "ERROR DE CONEC "+connectionResult.toString(), Toast.LENGTH_SHORT).show();
+        googleSignInClient = GoogleSignIn.getClient(this,gso);
+        mAuth = FirebaseAuth.getInstance();
     }
 
     /**LLAMAMOS AL METODO onStart() para que al iniciar verifiquemos si existe alguna cuenta
@@ -64,34 +62,21 @@ public class MainActivity extends AppCompatActivity implements  ComunicaFragment
     @Override
     protected void onStart() {
         super.onStart();
-        OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi.silentSignIn(googleApiClient);
-        if(opr.isDone()){
-            GoogleSignInResult result = opr.get();
-            validarResult(result);
+        FirebaseUser concurretUser = mAuth.getCurrentUser();
+        if(concurretUser!=null){
+            validar(concurretUser);
         }else{
-            opr.setResultCallback(new ResultCallback<GoogleSignInResult>() {
-                @Override
-                public void onResult(@NonNull GoogleSignInResult googleSignInResult) {
-                    validarResult(googleSignInResult);
-                }
-            });
+            abrirLogin();
+            Log.e("ERROR: ","Fallo en el concurrentUser de Firebase");
         }
     }
 
+    private void validar(FirebaseUser result) {
+            /**GUARDO EL NOMBRE USUARIO Y SU Uid*/
+            User.getInstance().setUsuario(result.getDisplayName());
+            User.getInstance().setID(result.getUid());
 
-
-    private void validarResult(GoogleSignInResult result) {
-        if(result.isSuccess()){
-
-            /**Obtenemos el id de la cuenta iniciada*/
-            GoogleSignInAccount account = result.getSignInAccount();
-            Log.e("CUENTA:",account.toString());
-
-            /**GUARDO EL USUARIO, ID Y EL TOKEN EN EL USUARIO*/
-            User.getInstance().setUsuario(account.getGivenName());
-            User.getInstance().setID(account.getId());
-
-            Log.e("ID Cuenta: ",""+account.getId());
+            Log.e("ID Cuenta: ",""+result.getUid());
             Log.e("ID User: ",User.getInstance().getID());
 
             /**GENERO EL TOKEN PARA PODER PASARLO AL HEADER DE LOS RESPONS*/
@@ -115,11 +100,6 @@ public class MainActivity extends AppCompatActivity implements  ComunicaFragment
             /** INSTANCIO EL FRAGMENT MENU Y LO ASIGNO AL CONTENEDOR DEL MAIN PRINCIPAL**/
             menu = new MenuFragment();
             getSupportFragmentManager().beginTransaction().add(R.id.contenedor,menu).commit();
-
-        }else{
-            /**Caso contrario volvemos a la activity de login**/
-            abrirLogin();
-        }
     }
 
     private void abrirLogin() {
@@ -146,15 +126,16 @@ public class MainActivity extends AppCompatActivity implements  ComunicaFragment
     /**Metodo para el boton logOut**/
 
     public void logOut(View view) {
-        Auth.GoogleSignInApi.signOut(googleApiClient).setResultCallback(new ResultCallback<Status>() {
+        Auth.GoogleSignInApi.signOut(googleSignInClient.asGoogleApiClient())
+                .setResultCallback(new ResultCallback<Status>() {
             @Override
             public void onResult(@NonNull Status status) {
                 if (status.isSuccess()) {
-                    //Toast.makeText(MainActivity.this, "SALGA DE LA APP Y VUELVA A INGRESAR PARA CAMBIAR DE USUARIO", Toast.LENGTH_SHORT).show();
                     bandera = false;
                     abrirLogin();
                 } else {
-                    Toast.makeText(getApplicationContext(), "NO SE PUDO CERRAR SESIÓN", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "NO SE PUDO CERRAR SESIÓN",
+                            Toast.LENGTH_SHORT).show();
                 }
             }
         });

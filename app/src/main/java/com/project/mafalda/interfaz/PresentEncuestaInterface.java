@@ -11,7 +11,7 @@ import java.util.ArrayList;
 public interface PresentEncuestaInterface {
     void cargarVista(String nombre, Context context);
     void vista(Encuesta encuesta,ArrayList<Imagen> imagenes,String cabecera);
-
+    void vistaError();
     void respuesta(Context context,String nombre, String respuesta,Imagen imagen);
     void mostrarImagen(Imagen imagen);
     void mostrarImagen(Bitmap imagen);

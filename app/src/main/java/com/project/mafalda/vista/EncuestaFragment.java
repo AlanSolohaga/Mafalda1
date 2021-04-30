@@ -142,6 +142,14 @@ public class EncuestaFragment extends Fragment implements VistaEncuestaInterface
         });
 
     }
+
+    @Override
+    public void vistaError() {
+        imagen.setImageDrawable(getResources().getDrawable(R.drawable.mafalda));
+        txtpregunta.setText("¡Sé contestaron todas las imagenes!");
+        recycleropciones.setVisibility(View.INVISIBLE);
+    }
+
     Utilidades uti = new Utilidades();
     @Override
     public void mostrarImagen(Imagen imagenes) {
@@ -159,6 +167,5 @@ public class EncuestaFragment extends Fragment implements VistaEncuestaInterface
         loading.dismissDialog();
         Toast.makeText(getContext(), ""+error, Toast.LENGTH_LONG).show();
     }
-
 
 }

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 public interface VistaEncuestaInterface {
     void vista(Encuesta encuesta,ArrayList<Imagen> imagenes,String cabecera);
+    void vistaError();
     void mostrarImagen(Imagen imagen);
     void mostrarImagen(Bitmap imagen);
     void error(String error);
